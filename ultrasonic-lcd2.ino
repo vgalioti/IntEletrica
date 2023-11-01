@@ -1,3 +1,31 @@
+#include <LiquidCrystal.h>
+#include <Ultrasonic.h>
+
+using namespace std;
+
+#define PINO_ECHO 13
+#define PINO_TRIG 10
+
+Ultrasonic ultrasonic(PINO_TRIG, PINO_ECHO);
+
+// initialize the library by associating any needed LCD interface pin
+// with the arduino pin number it is connected to
+
+ISR(TIMER1_COMPA_vect);
+void printAds();
+void menu();
+
+// Variaveis globais
+bool showAds = true;
+int adsId;
+int secondsAtAds = 10;
+int secondsAtMenu = 0;
+int teste = 0;
+
+// Variaveis globais para a TelaLCD
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 void setup()
 {
   // Serial.begin(9600)
