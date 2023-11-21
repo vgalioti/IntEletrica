@@ -1,6 +1,7 @@
 #include <LiquidCrystal.h>
 
 // Funcoes
+ISR(TIMER0_COMPA_vect);
 ISR(TIMER1_COMPA_vect);
 void printAds();
 void menu();
@@ -23,7 +24,11 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 void setup()
 {
   lcd.begin(16, 2);
+  // OS PINOS ABAIXO DEVEM ESTAR NA ENTRADA DA BACKLIGHT E DO CONTRASTE. 
+  // ALTERE OS PRIMEIROS NÚMEROS SE NECESSÁRIO.
+  // LEMBRE DO RESISTOR
   analogWrite(6, 0);
+  analogWrite(10, 0);
 
   pinMode(8, OUTPUT);
   pinMode(9, OUTPUT);
