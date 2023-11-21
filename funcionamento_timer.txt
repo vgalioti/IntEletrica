@@ -1,0 +1,179 @@
+============================================================
+========  COMO CONFIGURAR TIMERS NO ARDUINO UNO R3  ========
+========                 by Vini                    ========
+============================================================
+
+
+O Arduino possui 3 timers, são estes: TIMER0, TIMER1 e TIMER2.
+O número 1 é de 16 bits (ou seja, o valor máximo é 65.536), e
+os outros dois são 8 bits (valor máximo 256).
+
+
+-----
+COMO O TIMER FUNCIONA?
+
+Para contar o tempo, o timer utiliza o clock do processador.
+No caso do nosso Arduino - o UNO R3 - essa frequência é de
+16MHz, ou seja, 16000000 de vezes por segundo.
+
+Essa é a "base" que ele usa para contar. Então, se você não 
+configurar um "preescaler", a cada vez que o processador 
+"atualizar" ele vai adicionar +1 na memória interna do timer.
+Isso significa que, depois de 1 segundo, o timer estaria com
+o valor de 16 milhões (o que não cabe nem na memória do TIMER1,
+em que o máximo é 16 bits).
+
+Então, para isso usamos um "preescaler". Os valores possíveis
+para o preescaler são 8, 64, 256 e 1024. Se você colocar ele
+com o valor 1024, o timer só vai adicionar +1 na memória interna
+depois do processador "atualizar" 1024 vezes.
+
+Agora, acho bom vermos o código.
+
+
+-----
+EXEMPLO:
+
+Para configurar um timer, em geral o código parece assim (como
+exemplo, vou usar o TIMER1):
+
+
+  noInterrupts();
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1  = 0;
+  TCCR1B |= (1 << WGM12);
+  TCCR1B |= (1 << CS12) | (1 << CS10); 
+  TIMSK1 |= (1 << OCIE1A);
+  OCR1A = 15624;
+
+  interrupts();
+
+
+Vou explicar o que sei:
+- Aqueles 2 primeiros valores (TCCR1A, TCCR1B) são registradores
+do timer. O TCNT1 é a memória que em si que vai guardar os valores.
+Veja que esse 1 depois das letras significa que é o TIMER1 que se está
+usando. Sempre inicie esses três valores com 0.
+
+- A linha 5 (TCCR1B |= (1 << WGM12)) eu sinceramente não sei como funciona,
+mas é assim:
+	TIMER0: TCCR0A |= (1 << WGM01)
+	TIMER1: TCCR1B |= (1 << WGM12)
+	TIMER2: TCCR2A |= (1 << WGM21)
+
+- A linha 6 configura o preescaler. Do jeito que está, é 1024. Pode ver como 
+configurar nessa imagem: 
+https://projects.arduinocontent.cc/4e5a46e1-ae4b-4581-afb2-f7c82159268e.GIF
+Você coloca esses "CS" definindo os bits  do registrador como querer.
+
+- O TIMSK (linha 7) você também sempre deixa assim, só muda o número dependendo do timer.
+	TIMER0: TIMSK0 |= (1 << OCIE0A);
+	TIMER1: TIMSK1 |= (1 << OCIE1A);
+	TIMER2: TIMSK1 |= (1 << OCIE1A);
+
+- Para definir o valor da linha 8, se usa a fórmula:
+  OCR1A = ((16*10^6) / (F1 * 1024)) - 1
+  (Você está literalmente dividindo a frequência do processador pelo preescaler
+   e multiplicando pelo período (inverso da frequência) que você quer que o timer
+   conte. Subtrai 1 por algum motivo.)
+  Ou seja, se quiser que o timer conte a cada 1 segundo, dá 15624.
+
+
+-----
+E O QUE ELE FAZ?
+Bom, no caso do exemplo, a cada um segundo, ele vai interromper o void loop e vai 
+chamar a função ISR(TIMER1_COMPA_vect), é só mudar o "1" dependendo do timer, e
+não precisa declarar isso antes da main. Também é uma função sem tipo, não precisa
+nem colocar o void antes.
+
+
+-----
+EM RESUMO, se implementa assim:
+
+void setup {
+  noInterrupts();
+
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1  = 0;
+  OCR1A = 15624;
+  TCCR1B |= (1 << WGM12);
+  TCCR1B |= (1 << CS12) | (1 << CS10); 
+  TIMSK1 |= (1 << OCIE1A);
+
+  interrupts();
+}
+
+void loop {
+  // seu codigo
+}
+
+ISR(TIMER1_COMPA_vect) {
+  // codigo que será executado a cada 1 segundo
+}
+
+
+Exemplo do TIMER0:
+
+
+void setup {
+  noInterrupts();
+
+  TCCR0A = 0;
+  TCCR0B = 0;
+  TCNT0  = 0;
+  OCR0A = 156;
+  TCCR0A |= (1<<WGM01);
+  TCCR0B |= (1<<CS02) | (1<<CS00);
+  TIMSK0 |= (1<<OCIE0A);
+
+  interrupts();
+}
+
+void loop {
+  // seu codigo
+}
+
+ISR(TIMER0_COMPA_vect) {
+  // codigo que será executado a cada 10ms
+}
+
+
+-----
+OBSERVAÇÃO
+Você pode criar uma variável global, tipo um (int contador = 0), para conseguir fazer o TIMER1 funcionar a cada 5 segundos, por exemplo.
+EXEMPLO:
+
+
+int contador = 0;
+
+void setup {
+  noInterrupts();
+
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1  = 0;
+  OCR1A = 15624;
+  TCCR1B |= (1 << WGM12);
+  TCCR1B |= (1 << CS12) | (1 << CS10); 
+  TIMSK1 |= (1 << OCIE1A);
+
+  interrupts();
+}
+
+void loop {
+  // seu codigo
+}
+
+ISR(TIMER1_COMPA_vect) {
+  // codigo que será executado a cada 1 segundo
+  contador++;
+
+  if(contador >= 5) {
+     contador = 0;
+     // codigo que sera executado a cada 5 segundos
+  }
+}
+
+
