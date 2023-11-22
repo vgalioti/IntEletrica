@@ -28,10 +28,10 @@ void setup()
   // ALTERE OS PRIMEIROS NÚMEROS SE NECESSÁRIO.
   // LEMBRE DO RESISTOR
   analogWrite(6, 0);
-  analogWrite(10, 0);
+  analogWrite(9, 0);
 
   pinMode(8, OUTPUT);
-  pinMode(9, OUTPUT);
+  pinMode(7, OUTPUT);
   
   // Configuracao do timer para contar cada segundo com o clock.
   // OCR1A = ((16*10^6) / (F1 * 1024)) - 1
