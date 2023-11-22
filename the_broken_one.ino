@@ -86,17 +86,16 @@ ISR(TIMER1_COMPA_vect) {
     secondsAtMenu = 0;
     secondsAtAds++;
 
-    if (secondsAtAds >= 50) {
+    if (secondsAtAds >= 15) {
       printAds();
       secondsAtAds = 0;
     }
   } else {
     secondsAtAds = 0;
     secondsAtMenu++;
-    lcd.clear();
-    if (secondsAtMenu > 75) {
+    if (secondsAtMenu > 25) {
       showAds = true;
-      secondsAtAds = 50;
+      secondsAtAds = 15;
     }
   }
   cm_sec = ultrasonic.convert(microsec, Ultrasonic::CM);
