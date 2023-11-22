@@ -32,11 +32,11 @@ void setup() {
   // OS PINOS ABAIXO DEVEM ESTAR NA ENTRADA DA BACKLIGHT E DO CONTRASTE.
   // ALTERE OS PRIMEIROS NÚMEROS SE NECESSÁRIO.
   // LEMBRE DO RESISTOR
-  analogWrite(6, 250);
-  analogWrite(10, 250);
+  analogWrite(6, 0);
+  analogWrite(9, 100);
 
   pinMode(8, OUTPUT);
-  pinMode(9, OUTPUT);
+  pinMode(7, OUTPUT);
 
   // Configuracao do timer para contar cada segundo com o clock.
   // OCR1A = ((16*10^6) / (F1 * 1024)) - 1
@@ -136,8 +136,11 @@ void menu() {
     }
   };
 
-  lcd.setCursor(0, 0);
-  lcd.clear();
+  
+  if (tela != -1){
+    lcd.setCursor(0, 0);
+    lcd.clear();
+
   switch (tela) {
     case 0:
       lcd.print("LINHAS DE ONIBUS");
@@ -176,6 +179,7 @@ void menu() {
       break;
   }
   change(tela, tela_ant);
+}
 
   if (digitalRead(8)) {
     switch (tela_ant) {
@@ -195,7 +199,7 @@ void menu() {
     if (tela_ant == 8012 || tela_ant == 8022 || tela_ant == 8032) {
       tela = 0;
     }
-  } else if (digitalRead(9)) {
+  } else if (digitalRead()) {
     if (tela_ant == 1)
         tela = 2;
     else if (tela == 2)
