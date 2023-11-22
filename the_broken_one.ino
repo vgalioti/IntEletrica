@@ -3,6 +3,8 @@
 
 #define PINO_ECHO 13
 #define PINO_TRIG 16
+#define LCD_BACKLIGHT 6
+#define LCD_CONTRAST 9
 
 Ultrasonic ultrasonic(PINO_TRIG, PINO_ECHO);
 
