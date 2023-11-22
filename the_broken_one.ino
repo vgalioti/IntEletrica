@@ -199,12 +199,16 @@ void menu() {
     if (tela_ant == 8012 || tela_ant == 8022 || tela_ant == 8032) {
       tela = 0;
     }
-  } else if (digitalRead()) {
+    delay1Sec();
+    secondsAtMenu = 0
+
+  } else if (digitalRead(7)) {
     if (tela_ant == 1)
         tela = 2;
     else if (tela == 2)
         tela = 3;
+
+    delay1Sec();
+    secondsAtMenu = 0
     }
-  secondsAtMenu = 0;
-  delay1Sec();
 }
