@@ -1,113 +1,125 @@
-#include <ESP8266WiFi.h>        
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
+#include <WiFiClientSecureBearSSL.h>
 #include <ArduinoJson.h>
 #include <math.h>
 
-#define ssid "Vhos" //Nome da rede wi-fi
-#define password "yiht0860" //Senha da rede
-#define baseURL "http://api.olhovivo.sptrans.com.br"
-#define token "dbc75b095b00a61d2011cf398eeb6adbba4cf61ef9cec1c40c90e9e36c6c1cf0"
+const char* ssid = "Nome da rede"; //Rede wifi
+const char* password = "Senha da rede"; //Senha wifi
 
 const char * headerKeys[] = {"Set-Cookie"};
 const size_t numberOfHeaders = 1;
 
+String authCode;
+String msg;
 
+HTTPClient https;
+std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
 
-HTTPClient http;
-WiFiClient wifiClient;
+void conWifi();
+void startHttps();
+String logar();
+int getPosition();
 
 void setup() {
-  
-  Serial.begin(9600); 
-  delay(10);
-  
-  pinMode(BUILTIN_LED, OUTPUT); 
-  digitalWrite(BUILTIN_LED, LOW); 
-  
-  WiFi.begin(ssid, password);             
-  Serial.print("Connecting to ");
-  Serial.print(ssid); Serial.println(" ...");
-  
-  while (WiFi.status() != WL_CONNECTED) { 
-    delay(100);   
-  } 
-   
-  digitalWrite(BUILTIN_LED, HIGH);
-  Serial.println('\n');
-  Serial.println("Connection established!");
-
+  Serial.begin(115200);
+  delay(100);
+  conWifi();
+  startHttps();
+  authCode = logar();
 }
 
 void loop() {
+  int oldTempo = 20;
+  if(getPosition() == 200){
+    int tempo = calcularTempo();
+    if(tempo != -1 && tempo<30){
+      oldTempo = tempo;
+    }
+  }
 
-  float xIPT = -23.55601721442918;
-  float yIPT = -46.733710521997594;
-  String cookie = logar();
+  Serial.println(oldTempo);
+  
   delay(1000);
-  String o80221 = "/v2.1/Posicao/Linha?codigoLinha=2085"; //onibus 8022 direcao metro
-  
-  http.begin(wifiClient, baseURL+o80221);
-  http.addHeader("Cookie", cookie);
-  
-  int httpCode = http.GET();
-  String msg = http.getString();
-
-  StaticJsonDocument<1000> doc;
-  DeserializationError error = deserializeJson(doc, msg);
-
-   if (error) {
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error.f_str());
-
-   }
-
-   float *dTerminal = new float[1];
-   dTerminal[0] = sqrt((-23.551950231465387+23.57195464211519)*(-23.551950231465387+23.57195464211519)+(-46.73183795190236+46.70897838755912)*(-46.73183795190236+46.70897838755912));
-   
-   float *px1 = new float[1];
-   float *py1 = new float[1];
-   px1[0] = doc["vs"][0]["px"];
-   py1[0] = doc["vs"][0]["py"];
-
-   float d = sqrt((px1[0]-xIPT)*(px1[0]-xIPT)+(py1[0]-yIPT)*(py1[0]-yIPT));
-   Serial.println(px1[0], 10);
-   Serial.println(py1[0], 10);
-
-
-
-   delete[] px1;
-   delete[] py1;
-   
-   float t = d * 20/(dTerminal[0]);
-    
-   Serial.println(dTerminal[0], 10);
-   delete[] dTerminal;
-    
-   Serial.println(d, 10);
-   Serial.print(t, 3);Serial.println("minutos");
-    
-   http.end();
-   delay(1000);
-   
 }
+
+void conWifi(){
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi ..");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Connecting...");
+    delay(1000);
+  }  
+}
+
+void startHttps(){
+
+   if ((WiFi.status() == WL_CONNECTED)) {
+    client->setInsecure();
+    if (https.begin(*client, "https://www.howsmyssl.com/a/check")) {  // HTTPS
+      // start connection and send HTTP header
+      int httpCode = https.GET();
+      // httpCode will be negative on error
+      if (httpCode > 0) {
+        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+             Serial.println("[HTTPS] stablished");     
+  
+        }
+      } else {
+        Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
+        https.end();
+      }
+ 
+    } else {
+      Serial.printf("[HTTPS] Unable to connect\n");
+    }
+ }
+}
+
 
 String logar(){
   String cookie;
-  String URLauth = "/v2.1/Login/Autenticar?token=";
-  HTTPClient http;
+  https.collectHeaders(headerKeys, numberOfHeaders);
+  https.begin(*client, "https://api.olhovivo.sptrans.com.br/v2.1/Login/Autenticar?token=dbc75b095b00a61d2011cf398eeb6adbba4cf61ef9cec1c40c90e9e36c6c1cf0");
   
-  http.begin(wifiClient,baseURL + URLauth + token);
-  http.collectHeaders(headerKeys, numberOfHeaders);
-  int httpCode = http.GET();
-  http.POST("");
-  
-  for(int i = 0; i< http.headers(); i++){
-    cookie = (http.header(i));
+  if(https.POST("")){
+    Serial.println("Login feito");
+    for (int i = 0; i < https.headers(); i++) {
+       cookie = (https.header(i));
+    }
+     
+  https.end();             
   }
+  else{Serial.println("Falha no login");}
 
-  http.end();
-  
   return cookie;
+}
+
+int getPosition(){
+  https.begin(*client, "http://api.olhovivo.sptrans.com.br/v2.1/Posicao/Linha?codigoLinha=34853"); //Onibus 8022 na direcao metro
+  https.addHeader("Cookie", authCode);
+  delay(500);
+  msg = https.getString();
+  return https.GET();
   
- }
+}
+
+
+int calcularTempo(){
+  float x,y, d, xEstacao = -23.572095801613287, yEstacao = -46.70809516536287, xTerm =-23.552449171677665, yTerm = -46.73167825334665 ;
+  int temp;
+  StaticJsonDocument<1000> doc;
+  DeserializationError error = deserializeJson(doc, msg);
+ 
+  if (error) return -1;
+  x = doc["vs"][0]["py"]; //API da SPTRANS inverte latitude e longitude
+  y = doc["vs"][0]["px"];
+  d = sqrt(pow((x-xEstacao),2)+pow((y-yEstacao),2));
+
+  temp = 20*d/(sqrt(pow((xTerm-xEstacao),2)+pow((yTerm-yEstacao),2)));
+  
+  return temp;
+  
+}
