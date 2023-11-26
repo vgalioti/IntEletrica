@@ -13,6 +13,7 @@ const size_t numberOfHeaders = 1;
 
 String authCode;
 String msg;
+int getCode;
 
 HTTPClient https;
 std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
@@ -20,7 +21,7 @@ std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
 void conWifi();
 void startHttps();
 String logar();
-int getPosition();
+void getPosition();
 
 void setup() {
   Serial.begin(115200);
@@ -32,16 +33,19 @@ void setup() {
 
 void loop() {
   int oldTempo = 20;
-  if(getPosition() == 200){
+  getPosition();
+  if(getCode == 200){
     int tempo = calcularTempo();
-    if(tempo != -1 && tempo<30){
+    if(tempo != -1){
+      if(tempo == 20 && oldTempo<tempo) tempo = 30;
+      if(tempo > 20) tempo--;
       oldTempo = tempo;
     }
   }
-
+  
   Serial.println(oldTempo);
   
-  delay(1000);
+  delay(60000);
 }
 
 void conWifi(){
@@ -97,28 +101,36 @@ String logar(){
   return cookie;
 }
 
-int getPosition(){
+void getPosition(){
   https.begin(*client, "http://api.olhovivo.sptrans.com.br/v2.1/Posicao/Linha?codigoLinha=34853"); //Onibus 8022 na direcao metro
   https.addHeader("Cookie", authCode);
-  delay(500);
+  delay(1000);
   msg = https.getString();
-  return https.GET();
+  getCode = https.GET();
+  https.end();
   
 }
 
 
 int calcularTempo(){
-  float x,y, d, xEstacao = -23.572095801613287, yEstacao = -46.70809516536287, xTerm =-23.552449171677665, yTerm = -46.73167825334665 ;
+  float x,y, d = HUGE_VAL, xEstacao = -23.572095801613287, yEstacao = -46.70809516536287, xFis =-23.559808, yFis = -46.734841, aux ;
   int temp;
   StaticJsonDocument<1000> doc;
   DeserializationError error = deserializeJson(doc, msg);
- 
-  if (error) return -1;
-  x = doc["vs"][0]["py"]; //API da SPTRANS inverte latitude e longitude
-  y = doc["vs"][0]["px"];
-  d = sqrt(pow((x-xEstacao),2)+pow((y-yEstacao),2));
 
-  temp = 20*d/(sqrt(pow((xTerm-xEstacao),2)+pow((yTerm-yEstacao),2)));
+  if (error) return -1;
+
+  for(int i = 0; i<3; i++){
+    try{
+      x = doc["vs"][i]["py"]; //API da SPTRANS inverte latitude e longitude
+      y = doc["vs"][i]["px"];
+      aux = sqrt(pow((x-xEstacao),2)+pow((y-yEstacao),2));
+      if(aux<d) d=aux;
+    }
+    catch(std::exception){}
+  }
+  
+  temp = 20*d/(sqrt(pow((xFis-xEstacao),2)+pow((yFis-yEstacao),2)));
   
   return temp;
   
