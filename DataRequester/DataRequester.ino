@@ -5,8 +5,8 @@
 #include <ArduinoJson.h>
 #include <math.h>
 
-const char* ssid = "Vhos"; //Rede wifi
-const char* password = "yiht0860"; //Senha wifi
+const char* ssid = "Nome da rede"; //Rede wifi
+const char* password = "Senha da rede"; //Senha wifi
 
 const char * headerKeys[] = {"Set-Cookie"};
 const size_t numberOfHeaders = 1;
