@@ -5,8 +5,8 @@
 #include <ArduinoJson.h>
 #include <math.h>
 
-const char* ssid = "Nome da rede"; //Rede wifi
-const char* password = "Senha da rede"; //Senha wifi
+const char* ssid = "VIVOFIBRA-8270"; //Rede wifi
+const char* password = "2022670Civm*"; //Senha wifi
 
 const char * headerKeys[] = {"Set-Cookie"};
 const size_t numberOfHeaders = 1;
@@ -45,7 +45,7 @@ void loop() {
   
   Serial.println(oldTempo);
   
-  delay(60000);
+  delay(10000);
 }
 
 void conWifi(){
@@ -54,7 +54,7 @@ void conWifi(){
   Serial.print("Connecting to WiFi ..");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Connecting...");
-    delay(1000);
+    delay(60000);
   }  
 }
 
@@ -94,7 +94,6 @@ String logar(){
        cookie = (https.header(i));
     }
      
-  https.end();             
   }
   else{Serial.println("Falha no login");}
 
@@ -107,7 +106,6 @@ void getPosition(){
   delay(1000);
   msg = https.getString();
   getCode = https.GET();
-  https.end();
   
 }
 
@@ -115,23 +113,25 @@ void getPosition(){
 int calcularTempo(){
   float x,y, d = HUGE_VAL, xEstacao = -23.572095801613287, yEstacao = -46.70809516536287, xFis =-23.559808, yFis = -46.734841, aux ;
   int temp;
-  StaticJsonDocument<1000> doc;
+  StaticJsonDocument<3000> doc;
   DeserializationError error = deserializeJson(doc, msg);
 
   if (error) return -1;
 
+  
   for(int i = 0; i<3; i++){
     try{
       x = doc["vs"][i]["py"]; //API da SPTRANS inverte latitude e longitude
       y = doc["vs"][i]["px"];
       aux = sqrt(pow((x-xEstacao),2)+pow((y-yEstacao),2));
       if(aux<d) d=aux;
+      
     }
     catch(std::exception){}
-  }
   
   temp = 20*d/(sqrt(pow((xFis-xEstacao),2)+pow((yFis-yEstacao),2)));
   
+  }
+
   return temp;
-  
 }
