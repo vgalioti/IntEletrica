@@ -4,6 +4,7 @@
 #define PINO_ECHO 13
 #define PINO_TRIG 10
 #define LCD_BACKLIGHT 6
+#define LCD_CONTRAST 9
 
 Ultrasonic ultrasonic(PINO_TRIG, PINO_ECHO);
 
@@ -48,6 +49,7 @@ void setup() {
   // ALTERE OS PRIMEIROS NÚMEROS SE NECESSÁRIO.
   // LEMBRE DO RESISTOR
   analogWrite(LCD_BACKLIGHT, 230);
+  analogWrite(LCD_CONTRAST, 100);
 
   pinMode(7, OUTPUT);
   pinMode(8, OUTPUT);
