@@ -5,8 +5,8 @@
 #include <ArduinoJson.h>
 #include <math.h>
 
-const char* ssid = "VIVOFIBRA-8270"; //Rede wifi
-const char* password = "2022670Civm*"; //Senha wifi
+const char* ssid = "NOME DA REDE WIFI"; //Rede wifi
+const char* password = "SENHA DO WIFI"; //Senha wifi
 
 const char * headerKeys[] = {"Set-Cookie"};
 const size_t numberOfHeaders = 1;
@@ -32,7 +32,7 @@ void setup() {
 }
 
 void loop() {
-  int oldTempo = 20;
+  int oldTempo = 0;
   getPosition();
   if(getCode == 200){
     int tempo = calcularTempo();
