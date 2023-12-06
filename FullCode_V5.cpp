@@ -5,6 +5,7 @@
 #define PINO_TRIG 10
 #define LCD_BACKLIGHT 6
 #define LCD_CONTRAST 9
+#define MINIMUN 100
 
 Ultrasonic ultrasonic(PINO_TRIG, PINO_ECHO);
 
@@ -95,6 +96,7 @@ ISR(TIMER2_COMPA_vect) {
   if (tens_of_milisecs >= 10) {
 
     float cm_sec;
+    float backlight;
     long microsec = ultrasonic.timing();
     cm_sec = ultrasonic.convert(microsec, Ultrasonic::CM);
 
@@ -105,7 +107,13 @@ ISR(TIMER2_COMPA_vect) {
     else if(vetor[0] < -10) vetor[0] = (-10);
     vetor[1] += vetor[0];
 
-    analogWrite(LCD_BACKLIGHT, 255 - (5 * vetor[1]));
+    if (5 * vetor[1] < MINIMUN)
+    backlight = MINIMUN;
+
+    else 
+    backlight = 5 * vetor[1];
+
+    analogWrite(LCD_BACKLIGHT, backlight);
   
     tens_of_milisecs = 0;
   }
